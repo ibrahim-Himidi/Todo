@@ -1,71 +1,104 @@
-"use strict";
-let submit = document.querySelector(".add");
-let input = document.getElementById("value");
-let tasksBox = document.querySelector(".tasks .container");
-let tsk = document.querySelector(".tasks .container .task");
+const submitBtn = document.querySelector(".add");
+const input = document.getElementById("value");
+const tasksBox = document.querySelector(".tasks .container");
+const confirmContainer = document.querySelector(".confrim-box");
+const cancelBtn = document.querySelector(".confrim-box .cancel");
+const confrimToDeleteBtn = document.querySelector(
+  ".confrim-box .confirm-delete"
+);
+("use strict");
 
-let arrayOfTasks = [];
-
-if (localStorage.getItem("tasks")) {
-  arrayOfTasks = JSON.parse(localStorage.getItem("tasks"));
+let tasks = [];
+function TaskFromLocalStorage() {
+  let retrievedTasks = JSON.parse(localStorage.getItem("tasks"));
+  retrievedTasks == null ? (tasks = []) : (tasks = retrievedTasks);
 }
+TaskFromLocalStorage();
+storeTasks();
 
-dataFromLocalSt();
-
-
-
-
-// add task
-submit.onclick = () => {
-  if (input.value !== "") {
-    addTaskToArray(input.value);
-    input.value = "";
-  }
-};
-
-function addTaskToArray(task) {
-  let taskData = {
-    id: Date.now(),
-    title: task,
-    completed: false,
-  };
-  arrayOfTasks.push(taskData);
-  showData(arrayOfTasks); // ad element to page
-  localStorageData(arrayOfTasks);
-  // test
-  console.log(arrayOfTasks);
-  // console.log(JSON.stringify(arrayOfTasks));
-}
-
-function showData(arrayOfTasks) {
+function readTasksFromArray() {
+  let index = 0;
   tasksBox.innerHTML = "";
-  arrayOfTasks.forEach((task) => {
+  for (let property of tasks) {
     tasksBox.innerHTML += `
-    <div class="task" data-id="${task.id}" >
-    <p>${task.title}</p>
-    <div>
-        <span   class="icon-check" id="tick" ></span>
-        <span  class="icon-trash-o  del"></span>
-    </div>
-    </div>
+            <div class="task ${property.taskDone ? "completed" : ""} ">
+            <div class="text">
+              <p>${property.taskTitle}</p>
+              <time> <i class="fa-solid fa-hourglass-end"></i> ${
+                property.date
+              }</time>
+            </div>
+            <div>
+            ${
+              property.taskDone
+                ? `
+            <i class="fa-solid fa-xmark check bg-red"  onclick="completeTheTasks(${index})" ></i>
+            `
+                : `
+            <i class="fa-solid fa-check check " onclick="completeTheTasks(${index})"></i>
+            `
+            }
+               
+               <i class="fa-solid fa-trash remove-btn" onclick="deleteTask(${index})" ></i>
+            </div>
+          </div>
     `;
-    if (task.completed) {
-      tsk.className = "task done";
-    }
-  });
+    index++;
+  }
 }
+readTasksFromArray();
 
-function localStorageData(arrayOfTasks) {
-  localStorage.setItem("tasks", JSON.stringify(arrayOfTasks));
-}
+submitBtn.addEventListener("click", () => {
+  let taskVlue = input.value;
+  let time = new Date();
+  if (taskVlue) {
+    let taskObj = {
+      taskTitle: taskVlue,
+      taskDone: false,
+      date: `${time.toDateString()} | ${time.getHours()}:${time.getMinutes()}`,
+    };
 
-function dataFromLocalSt() {
-  let data = window.localStorage.getItem("tasks");
-  if (data) {
-    let tasks = JSON.parse(data);
-    showData(tasks);
+    tasks.push(taskObj);
+    input.value = "";
+    storeTasks();
+    readTasksFromArray();
+  }
+});
+
+// delete tasks
+{
+  let clobalIndex;
+  function deleteTask(index) {
+    clobalIndex = index;
+    confirmContainer.style.display = "flex";
+  }
+  function confrimToDelete() {
+    tasks.splice(clobalIndex, 1);
+    confirmContainer.style.display = "none";
+    storeTasks();
+    readTasksFromArray();
+  }
+  function cancel() {
+    confirmContainer.style.display = "none";
   }
 }
 
+// Complete the tasks
+function completeTheTasks(index) {
+  if (tasks[index].taskDone) {
+    tasks[index].taskDone = false;
+    storeTasks();
+    readTasksFromArray();
+  } else {
+    tasks[index].taskDone = true;
+    storeTasks();
+    readTasksFromArray();
+  }
+}
 
+// *************** localStorage ************************
 
+function storeTasks() {
+  let taskString = JSON.stringify(tasks);
+  localStorage.setItem("tasks", taskString);
+}
